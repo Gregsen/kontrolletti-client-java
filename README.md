@@ -2,6 +2,14 @@
 
 Java interfaces and implementations for the [Kontrolletti](https://github.com/zalando/kontrolletti) API
  
+## Contributing
+ 
+This project uses the com.mycila:license-maven-plugin to apply a standardized license header to all source files:
+
+    mvn license:format
+
+NOT PROPERLY SET LICENSE HEADERS WILL LEAD TO FAILING BUILDS!
+ 
 ## License
 
 Copyright © 2015 Zalando SE
