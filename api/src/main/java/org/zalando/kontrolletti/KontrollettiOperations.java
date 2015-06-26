@@ -15,4 +15,17 @@
  */
 package org.zalando.kontrolletti;
 
-public interface KontrollettiOperations { }
+public interface KontrollettiOperations {
+
+    /**
+     * Accepts any valid (GIT) repository url and turns it into its normalized form. Normalized urls can be safely used
+     * for comparisons.
+     *
+     * @param   repositoryUrl  a URL, e.g. "git@github.com:zalando/kontrolletti.git", or
+     *                         "https://github.com/zalando/kontrolletti"
+     *
+     * @return  the normalized URL
+     */
+    String normalizeRepositoryUrl(String repositoryUrl);
+
+}
