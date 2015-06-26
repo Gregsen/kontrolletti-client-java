@@ -1,5 +1,8 @@
 # Kontrolletti Java Clients
 
+[![Build Status](https://travis-ci.org/zalando/kontrolletti-client-java.svg)](https://travis-ci.org/zalando/kontrolletti-client-java)
+[![Coverage Status](https://coveralls.io/repos/zalando/kontrolletti-client-java/badge.svg)](https://coveralls.io/r/zalando/kontrolletti-client-java)
+
 Java interfaces and implementations for the [Kontrolletti](https://github.com/zalando/kontrolletti) API
  
 ## Contributing
