@@ -23,7 +23,6 @@
         <java.source>1.8</java.source>
         <java.target>1.8</java.target>
 
-        <gpg.skip>true</gpg.skip>
         <coveralls.dryRun>true</coveralls.dryRun>
 
         <spring-boot.version>1.2.4.RELEASE</spring-boot.version>
@@ -118,19 +117,6 @@
                         <id>attach-javadocs</id>
                         <goals>
                             <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>${maven-gpg-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -253,9 +239,23 @@
 
         <profile>
             <id>with-gpg</id>
-            <properties>
-                <gpg.skip>false</gpg.skip>
-            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
