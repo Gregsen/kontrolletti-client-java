@@ -15,7 +15,11 @@
  */
 package org.zalando.kontrolletti;
 
+import static org.assertj.core.api.StrictAssertions.assertThat;
+
 import static org.springframework.http.HttpStatus.MOVED_PERMANENTLY;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
 
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
@@ -35,6 +39,13 @@ public class RestTemplateKontrollettiOperationsTest {
 
     private static final String BASE_URL = "https://kontrolletti.zalando.org";
 
+    private static final String NORMALIZED_URL = "https://github.com/zalando/kontrolletti-client-java";
+    private static final String NORMALIZED_ENCODED_URL =
+        "https%3A%2F%2Fgithub.com%2Fzalando%2Fkontrolletti-client-java";
+
+    private static final String DENORMALIZED_URL = "git@github.com:zalando/kontrolletti-client-java.git";
+    private static final String DENORMALIZED_ENCODED_URL = "git%40github.com%3Azalando%2Fkontrolletti-client-java.git";
+
     private RestTemplateKontrollettiOperations kontrollettiOperations;
 
     private MockRestServiceServer mockServer;
@@ -42,22 +53,58 @@ public class RestTemplateKontrollettiOperationsTest {
     @Before
     public void setUp() throws Exception {
         final RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setErrorHandler(new KontrollettiResponseErrorHandler());
 
         mockServer = MockRestServiceServer.createServer(restTemplate);
         kontrollettiOperations = new RestTemplateKontrollettiOperations(restTemplate, BASE_URL);
     }
 
     @Test
-    public void testNormalizeRepositoryUrl() throws Exception {
-        final String repositoryUrl = "git@github.com:zalando/kontrolletti-client-java.git";
-        final HttpHeaders headers = new HttpHeaders();
-        headers.add(X_NORMALIZED_REPOSITORY_URL, "https://github.com/zalando/kontrolletti-client-java");
+    public void testNormalizeDenormalizedRepositoryUrl() throws Exception {
+        mockServer.expect(requestTo(BASE_URL + "/api/repos/" + DENORMALIZED_ENCODED_URL)) //
+                  .andRespond(
+                      withStatus(MOVED_PERMANENTLY)                                       //
+                      .headers(headers(X_NORMALIZED_REPOSITORY_URL, NORMALIZED_URL)));
 
-        mockServer.expect(requestTo(BASE_URL + "/api/repos/git%40github.com%3Azalando%2Fkontrolletti-client-java.git"))
-                  .andRespond(withStatus(MOVED_PERMANENTLY).headers(headers));
-
-        kontrollettiOperations.normalizeRepositoryUrl(repositoryUrl);
+        assertThat(kontrollettiOperations.normalizeRepositoryUrl(DENORMALIZED_URL)).isEqualTo(NORMALIZED_URL);
 
         mockServer.verify();
+    }
+
+    @Test
+    public void testNormalizeFoundNormalizedRepositoryUrl() throws Exception {
+        mockServer.expect(requestTo(BASE_URL + "/api/repos/" + NORMALIZED_ENCODED_URL)) //
+                  .andRespond(withStatus(OK)                                            //
+                      .headers(headers(X_NORMALIZED_REPOSITORY_URL, NORMALIZED_URL)));
+
+        assertThat(kontrollettiOperations.normalizeRepositoryUrl(NORMALIZED_URL)).isEqualTo(NORMALIZED_URL);
+
+        mockServer.verify();
+    }
+
+    @Test
+    public void testNormalizeNotFoundNormalizedRepositoryUrl() throws Exception {
+        mockServer.expect(requestTo(BASE_URL + "/api/repos/" + NORMALIZED_ENCODED_URL)) //
+                  .andRespond(withStatus(NOT_FOUND));
+
+        assertThat(kontrollettiOperations.normalizeRepositoryUrl(NORMALIZED_URL)).isEqualTo(NORMALIZED_URL);
+
+        mockServer.verify();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullInput() throws Exception {
+        kontrollettiOperations.normalizeRepositoryUrl(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmptyInput() throws Exception {
+        kontrollettiOperations.normalizeRepositoryUrl("");
+    }
+
+    private static HttpHeaders headers(final String key, final String value) {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.add(key, value);
+        return headers;
     }
 }

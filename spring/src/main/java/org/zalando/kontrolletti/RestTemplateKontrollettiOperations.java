@@ -15,9 +15,8 @@
  */
 package org.zalando.kontrolletti;
 
-import static java.lang.String.format;
+import static java.util.Arrays.stream;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.RequestEntity.head;
 
@@ -36,6 +35,8 @@ public class RestTemplateKontrollettiOperations implements KontrollettiOperation
 
     static final String X_NORMALIZED_REPOSITORY_URL = "X-Normalized-Repository-URL";
 
+    private static final String UTF_8 = "UTF-8";
+
     private final RestOperations restOperations;
 
     private final String baseUrl;
@@ -50,26 +51,35 @@ public class RestTemplateKontrollettiOperations implements KontrollettiOperation
             throw new IllegalArgumentException("repositoryUrl must not be null");
         }
 
-        final URI uri;
-        try {
-            uri = UriComponentsBuilder.fromUriString(baseUrl)
-                                      .pathSegment("api", "repos", URLEncoder.encode(repositoryUrl, "UTF-8"))
-                                      .build(true).toUri();
-        } catch (final UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
-        }
-
+        final URI uri = buildUri("api", "repos", repositoryUrl);
         final ResponseEntity<Void> response = restOperations.exchange(head(uri).build(), Void.TYPE);
         final HttpStatus statusCode = response.getStatusCode();
 
         if (statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
             return response.getHeaders().getFirst(X_NORMALIZED_REPOSITORY_URL);
-        } else if (statusCode == NOT_FOUND) {
+        } else if (statusCode == NOT_FOUND) { // url already normalized, but repo was not found
             return repositoryUrl;
-        } else if (statusCode == BAD_REQUEST) {
-            throw new IllegalArgumentException(format("malformed repositoryUrl: '%s'", repositoryUrl));
         } else {
-            throw new IllegalStateException(format("Ooops, something went terribly wrong: %s", response));
+            throw new IllegalStateException("Unexpected error response: " + response);
+        }
+    }
+
+    private URI buildUri(final String... pathSegments) {
+        final UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
+        if (pathSegments != null && pathSegments.length > 0) {
+            stream(pathSegments)                                //
+            .map(RestTemplateKontrollettiOperations::urlEncode) //
+                                   .forEach(builder::pathSegment);
+        }
+
+        return builder.build(true).toUri();
+    }
+
+    private static String urlEncode(final String string) {
+        try {
+            return URLEncoder.encode(string, UTF_8);
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
         }
     }
 }
