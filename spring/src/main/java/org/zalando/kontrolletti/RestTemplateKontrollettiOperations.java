@@ -41,6 +41,13 @@ public class RestTemplateKontrollettiOperations implements KontrollettiOperation
 
     private final String baseUrl;
 
+    /**
+     * Constructor.
+     *
+     * @param  restOperations  usually a RestTemplate or OAuth2RestTemplate. Make sure it does not throw an exception on
+     *                         404 responses, because this client implementation often handles 404s itself.
+     * @param  baseUrl         URL of a Kontrolletti instance, e.g. https://kontrolletti.example.org
+     */
     public RestTemplateKontrollettiOperations(final RestOperations restOperations, final String baseUrl) {
         this.restOperations = restOperations;
         this.baseUrl = baseUrl;
@@ -60,7 +67,7 @@ public class RestTemplateKontrollettiOperations implements KontrollettiOperation
         } else if (statusCode == NOT_FOUND) { // url already normalized, but repo was not found
             return repositoryUrl;
         } else {
-            throw new IllegalStateException("Unexpected error response: " + response);
+            throw new IllegalStateException("Unexpected response: " + response);
         }
     }
 
