@@ -16,7 +16,9 @@
 package org.zalando.kontrolletti;
 
 import static org.assertj.core.api.StrictAssertions.assertThat;
+import static org.assertj.core.api.StrictAssertions.failBecauseExceptionWasNotThrown;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.MOVED_PERMANENTLY;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
@@ -26,13 +28,17 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import static org.zalando.kontrolletti.RestTemplateKontrollettiOperations.X_NORMALIZED_REPOSITORY_URL;
 
+import java.io.IOException;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.ClientHttpResponse;
 
 import org.springframework.test.web.client.MockRestServiceServer;
 
+import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
 public class RestTemplateKontrollettiOperationsTest {
@@ -50,9 +56,11 @@ public class RestTemplateKontrollettiOperationsTest {
 
     private MockRestServiceServer mockServer;
 
+    private RestTemplate restTemplate;
+
     @Before
     public void setUp() throws Exception {
-        final RestTemplate restTemplate = new RestTemplate();
+        restTemplate = new RestTemplate();
         restTemplate.setErrorHandler(new KontrollettiResponseErrorHandler());
 
         mockServer = MockRestServiceServer.createServer(restTemplate);
@@ -92,6 +100,20 @@ public class RestTemplateKontrollettiOperationsTest {
         mockServer.verify();
     }
 
+    @Test
+    public void testNormalizationErrorWithLaxErrorHandler() throws Exception {
+        mockServer.expect(requestTo(BASE_URL + "/api/repos/" + NORMALIZED_ENCODED_URL)) //
+                  .andRespond(withStatus(BAD_REQUEST));
+
+        try {
+            restTemplate.setErrorHandler(new PassThroughResponseErrorHandler());
+            kontrollettiOperations.normalizeRepositoryUrl(NORMALIZED_URL);
+            failBecauseExceptionWasNotThrown(IllegalStateException.class);
+        } catch (IllegalStateException ignore) { }
+
+        mockServer.verify();
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testNullInput() throws Exception {
         kontrollettiOperations.normalizeRepositoryUrl(null);
@@ -106,5 +128,15 @@ public class RestTemplateKontrollettiOperationsTest {
         final HttpHeaders headers = new HttpHeaders();
         headers.add(key, value);
         return headers;
+    }
+
+    private static class PassThroughResponseErrorHandler implements ResponseErrorHandler {
+        @Override
+        public boolean hasError(final ClientHttpResponse response) throws IOException {
+            return false;
+        }
+
+        @Override
+        public void handleError(final ClientHttpResponse response) throws IOException { }
     }
 }
