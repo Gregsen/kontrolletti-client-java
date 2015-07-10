@@ -144,6 +144,7 @@
                 <version>${nexus-staging-maven-plugin.version}</version>
                 <configuration>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <autoDropAfterRelease>true</autoDropAfterRelease>
                 </configuration>
                 <executions>
                     <execution>
