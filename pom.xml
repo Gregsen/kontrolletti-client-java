@@ -90,7 +90,7 @@
 
     <scm>
         <connection>scm:git:https://github.com/zalando/kontrolletti-client-java.git</connection>
-        <developerConnection>scm:git:https://github.com/zalando/kontrolletti-client-java.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:zalando/kontrolletti-client-java.git</developerConnection>
         <url>https://github.com/zalando/kontrolletti-client-java.git</url>
         <tag>HEAD</tag>
     </scm>
