@@ -3,7 +3,7 @@
 
     <groupId>org.zalando</groupId>
     <artifactId>kontrolletti-client-java</artifactId>
-    <version>0.1.0-RC-1</version>
+    <version>0.1.0-SNAPSHOT</version>
     <modules>
         <module>api</module>
         <module>spring</module>
@@ -91,7 +91,7 @@
         <connection>scm:git:https://github.com/zalando/kontrolletti-client-java.git</connection>
         <developerConnection>scm:git:git@github.com:zalando/kontrolletti-client-java.git</developerConnection>
         <url>https://github.com/zalando/kontrolletti-client-java.git</url>
-        <tag>0.1.0-RC-1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <build>
