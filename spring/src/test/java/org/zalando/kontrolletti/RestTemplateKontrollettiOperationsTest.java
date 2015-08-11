@@ -18,13 +18,18 @@ package org.zalando.kontrolletti;
 import static org.assertj.core.api.StrictAssertions.assertThat;
 import static org.assertj.core.api.StrictAssertions.failBecauseExceptionWasNotThrown;
 
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.HEAD;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.MOVED_PERMANENTLY;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import static org.zalando.kontrolletti.RestTemplateKontrollettiOperations.X_NORMALIZED_REPOSITORY_URL;
 
@@ -32,6 +37,8 @@ import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import org.springframework.core.io.ClassPathResource;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.ClientHttpResponse;
@@ -70,6 +77,7 @@ public class RestTemplateKontrollettiOperationsTest {
     @Test
     public void testNormalizeDenormalizedRepositoryUrl() throws Exception {
         mockServer.expect(requestTo(BASE_URL + "/api/repos/" + DENORMALIZED_ENCODED_URL)) //
+                  .andExpect(method(HEAD))                                                //
                   .andRespond(
                       withStatus(MOVED_PERMANENTLY)                                       //
                       .headers(headers(X_NORMALIZED_REPOSITORY_URL, NORMALIZED_URL)));
@@ -82,6 +90,7 @@ public class RestTemplateKontrollettiOperationsTest {
     @Test
     public void testNormalizeFoundNormalizedRepositoryUrl() throws Exception {
         mockServer.expect(requestTo(BASE_URL + "/api/repos/" + NORMALIZED_ENCODED_URL)) //
+                  .andExpect(method(HEAD))                                              //
                   .andRespond(withStatus(OK)                                            //
                       .headers(headers(X_NORMALIZED_REPOSITORY_URL, NORMALIZED_URL)));
 
@@ -93,6 +102,7 @@ public class RestTemplateKontrollettiOperationsTest {
     @Test
     public void testNormalizeNotFoundNormalizedRepositoryUrl() throws Exception {
         mockServer.expect(requestTo(BASE_URL + "/api/repos/" + NORMALIZED_ENCODED_URL)) //
+                  .andExpect(method(HEAD))                                              //
                   .andRespond(withStatus(NOT_FOUND));
 
         assertThat(kontrollettiOperations.normalizeRepositoryUrl(NORMALIZED_URL)).isEqualTo(NORMALIZED_URL);
@@ -103,6 +113,7 @@ public class RestTemplateKontrollettiOperationsTest {
     @Test
     public void testNormalizationErrorWithLaxErrorHandler() throws Exception {
         mockServer.expect(requestTo(BASE_URL + "/api/repos/" + NORMALIZED_ENCODED_URL)) //
+                  .andExpect(method(HEAD))                                              //
                   .andRespond(withStatus(BAD_REQUEST));
 
         try {
@@ -122,6 +133,17 @@ public class RestTemplateKontrollettiOperationsTest {
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyInput() throws Exception {
         kontrollettiOperations.normalizeRepositoryUrl("");
+    }
+
+    @Test
+    public void testGetRepository() throws Exception {
+        mockServer.expect(requestTo(BASE_URL + "/api/repos/" + NORMALIZED_ENCODED_URL)) //
+                  .andExpect(method(GET))                                               //
+                  .andRespond(withSuccess(new ClassPathResource("/get-repository.json"), APPLICATION_JSON));
+
+        final RepositoryResponse repositoryResponse = kontrollettiOperations.getRepository(NORMALIZED_URL);
+        System.out.println(repositoryResponse);
+
     }
 
     private static HttpHeaders headers(final String key, final String value) {

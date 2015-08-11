@@ -18,6 +18,7 @@ package org.zalando.kontrolletti;
 import static java.util.Arrays.stream;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.RequestEntity.get;
 import static org.springframework.http.RequestEntity.head;
 
 import java.io.UnsupportedEncodingException;
@@ -27,6 +28,8 @@ import java.net.URLEncoder;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.util.Assert;
 
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -53,10 +56,9 @@ public class RestTemplateKontrollettiOperations implements KontrollettiOperation
         this.baseUrl = baseUrl;
     }
 
+    @Override
     public String normalizeRepositoryUrl(final String repositoryUrl) {
-        if (repositoryUrl == null || repositoryUrl.isEmpty()) {
-            throw new IllegalArgumentException("repositoryUrl must not be null");
-        }
+        Assert.hasText(repositoryUrl, "repositoryUrl must not be blank");
 
         final URI uri = buildUri("api", "repos", repositoryUrl);
         final ResponseEntity<Void> response = restOperations.exchange(head(uri).build(), Void.TYPE);
@@ -66,6 +68,24 @@ public class RestTemplateKontrollettiOperations implements KontrollettiOperation
             return response.getHeaders().getFirst(X_NORMALIZED_REPOSITORY_URL);
         } else if (statusCode == NOT_FOUND) { // url already normalized, but repo was not found
             return repositoryUrl;
+        } else {
+            throw new IllegalStateException("Unexpected response: " + response);
+        }
+    }
+
+    @Override
+    public RepositoryResponse getRepository(final String repositoryUrl) {
+        Assert.hasText(repositoryUrl, "repositoryUrl must not be blank");
+
+        final URI uri = buildUri("api", "repos", repositoryUrl);
+
+        final ResponseEntity<RepositoryResponse> response = restOperations.exchange(get(uri).build(),
+                RepositoryResponse.class);
+        final HttpStatus statusCode = response.getStatusCode();
+        if (statusCode.is2xxSuccessful()) {
+            return response.getBody();
+        } else if (statusCode == NOT_FOUND) {
+            return null;
         } else {
             throw new IllegalStateException("Unexpected response: " + response);
         }

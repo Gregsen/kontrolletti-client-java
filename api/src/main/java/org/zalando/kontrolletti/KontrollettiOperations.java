@@ -28,4 +28,6 @@ public interface KontrollettiOperations {
      */
     String normalizeRepositoryUrl(String repositoryUrl);
 
+    RepositoryResponse getRepository(String repositoryUrl);
+
 }
